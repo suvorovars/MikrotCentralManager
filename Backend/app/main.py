@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from db import engine, Base
 from device_manager.api import router as device_router
+from task_manager import models as task_models
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
