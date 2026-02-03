@@ -2,8 +2,6 @@
 
 from typing import List, Dict, Optional
 
-from librouteros.exceptions import LibRouterosError
-
 from mikrotik_connector.connector import MikroTikConnector
 from .exceptions import (
     FirewallConnectionError,
@@ -13,67 +11,65 @@ from .exceptions import (
 )
 
 
-def _get_api(connector: MikroTikConnector):
-    try:
-        return connector.get_api()
-    except Exception as e:
-        raise FirewallConnectionError(
-            f"Failed to connect to MikroTik {connector.host}"
-        ) from e
+def _raise_connection_error(connector: MikroTikConnector, error: Exception) -> None:
+    raise FirewallConnectionError(
+        f"Failed to connect to MikroTik {connector.host}"
+    ) from error
 
 
-def get_address_list(connector: MikroTikConnector, list_name: str) -> List[Dict]:
+async def get_address_list(connector: MikroTikConnector, list_name: str) -> List[Dict]:
     """
     Получить все записи address-list для указанного списка
     """
-    api = _get_api(connector)
-
     try:
-        result = api(
-            "/ip/firewall/address-list/print",
+        return await connector.ros_execute(
+            path="/ip/firewall/address-list",
+            action="print",
             where={"list": list_name},
         )
-        return list(result)
 
-    except LibRouterosError as e:
+    except Exception as e:
+        if "No available API or SSH connection" in str(e):
+            _raise_connection_error(connector, e)
         raise FirewallOperationError(
             f"Failed to fetch address-list '{list_name}'"
         ) from e
 
 
-def address_exists(connector: MikroTikConnector, list_name: str, address: str) -> bool:
+async def address_exists(connector: MikroTikConnector, list_name: str, address: str) -> bool:
     """
     Проверка существования адреса в списке
     """
-    api = _get_api(connector)
-
     try:
-        result = api(
-            "/ip/firewall/address-list/print",
-            where={
-                "list": list_name,
-                "address": address,
-            },
+        result = await connector.ros_execute(
+            path="/ip/firewall/address-list",
+            action="print",
+            where={"list": list_name, "address": address},
         )
-        return len(list(result)) > 0
+        return len(result) > 0
 
-    except LibRouterosError as e:
+    except Exception as e:
+        if "No available API or SSH connection" in str(e):
+            _raise_connection_error(connector, e)
         raise FirewallOperationError(
             f"Failed to check address '{address}' in list '{list_name}'"
         ) from e
 
 
-def add_address(connector: MikroTikConnector, list_name: str, address: str, comment: Optional[str] = None) -> None:
+async def add_address(
+    connector: MikroTikConnector,
+    list_name: str,
+    address: str,
+    comment: Optional[str] = None,
+) -> None:
     """
     Добавить адрес в address-list
     Идемпотентность обеспечивается через предварительную проверку
     """
-    if address_exists(connector, list_name, address):
+    if await address_exists(connector, list_name, address):
         raise AddressAlreadyExists(
             f"Address '{address}' already exists in list '{list_name}'"
         )
-
-    api = _get_api(connector)
 
     payload = {
         "list": list_name,
@@ -84,43 +80,49 @@ def add_address(connector: MikroTikConnector, list_name: str, address: str, comm
         payload["comment"] = comment
 
     try:
-        api("/ip/firewall/address-list/add", **payload)
+        await connector.ros_execute(
+            path="/ip/firewall/address-list",
+            action="add",
+            params=payload,
+        )
 
-    except LibRouterosError as e:
+    except Exception as e:
+        if "No available API or SSH connection" in str(e):
+            _raise_connection_error(connector, e)
         raise FirewallOperationError(
             f"Failed to add address '{address}' to list '{list_name}'"
         ) from e
 
 
-def remove_address(connector: MikroTikConnector, list_name: str, address: str) -> None:
+async def remove_address(
+    connector: MikroTikConnector,
+    list_name: str,
+    address: str,
+) -> None:
     """
     Удалить адрес из address-list
     """
-    api = _get_api(connector)
-
     try:
-        result = list(
-            api(
-                "/ip/firewall/address-list/print",
-                where={
-                    "list": list_name,
-                    "address": address,
-                },
-            )
+        result = await connector.ros_execute(
+            path="/ip/firewall/address-list",
+            action="print",
+            where={"list": list_name, "address": address},
         )
-
         if not result:
             raise AddressNotFound(
                 f"Address '{address}' not found in list '{list_name}'"
             )
 
         for item in result:
-            api(
-                "/ip/firewall/address-list/remove",
-                **{".id": item[".id"]},
+            await connector.ros_execute(
+                path="/ip/firewall/address-list",
+                action="remove",
+                params={".id": item[".id"]},
             )
 
-    except LibRouterosError as e:
+    except Exception as e:
+        if "No available API or SSH connection" in str(e):
+            _raise_connection_error(connector, e)
         raise FirewallOperationError(
             f"Failed to remove address '{address}' from list '{list_name}'"
         ) from e
