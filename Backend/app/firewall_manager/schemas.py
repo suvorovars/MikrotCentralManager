@@ -41,3 +41,11 @@ class FirewallListOperationResponse(BaseModel):
     list_name: str
     address: str
     status: str
+
+
+class FirewallGroupListResponse(BaseModel):
+    group_id: int
+    group_name: str
+    list_type: FirewallListType
+    list_name: str
+    devices: List[FirewallListResponse]
