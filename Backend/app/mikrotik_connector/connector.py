@@ -78,6 +78,11 @@ class MikroTikConnector:
             self.api_connection = None
             print(f"[API] Disconnected from {self.host}")
 
+    def get_api(self):
+        if not self.api_connection:
+            raise RuntimeError("API connection not established")
+        return self.api_connection
+
     # ---------------- SSH ---------------- #
 
     def _connect_ssh(self):
