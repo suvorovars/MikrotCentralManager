@@ -16,6 +16,7 @@ class DeviceGroup(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     devices = relationship("Device", back_populates="group")
+    task_targets = relationship("TaskTarget", back_populates="group")
 
 
 class Device(Base):
@@ -49,3 +50,5 @@ class Device(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     group = relationship("DeviceGroup", back_populates="devices")
+    task_targets = relationship("TaskTarget", back_populates="device")
+    task_results = relationship("TaskResult", back_populates="device")

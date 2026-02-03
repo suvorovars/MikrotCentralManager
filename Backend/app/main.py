@@ -3,8 +3,10 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from db import engine, Base
 from device_manager.api import router as device_router
+from task_manager import models as task_models
 from firewall_manager.api import router as firewall_router
 import uvicorn
+
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
