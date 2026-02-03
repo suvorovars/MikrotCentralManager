@@ -52,7 +52,7 @@ class FirewallListService:
 
         await connector.connect()
         try:
-            raw_entries = mikrotik_address_list.get_address_list(
+            raw_entries = await mikrotik_address_list.get_address_list(
                 connector=connector,
                 list_name=list_name,
             )
@@ -89,7 +89,7 @@ class FirewallListService:
 
         await connector.connect()
         try:
-            mikrotik_address_list.add_address(
+            await mikrotik_address_list.add_address(
                 connector=connector,
                 list_name=list_name,
                 address=address,
@@ -117,7 +117,7 @@ class FirewallListService:
 
         await connector.connect()
         try:
-            mikrotik_address_list.remove_address(
+            await mikrotik_address_list.remove_address(
                 connector=connector,
                 list_name=list_name,
                 address=address,
