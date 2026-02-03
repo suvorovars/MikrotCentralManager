@@ -2,9 +2,14 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from db import engine, Base
+
 from device_manager.api import router as device_router
 from backup_manager.api import router as backup_router
+from task_manager import models as task_models
+from firewall_manager.api import router as firewall_router
+
 import uvicorn
+
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
@@ -44,8 +49,11 @@ app.add_middleware(
 )
 
 # Подключаем роутеры микросервисов
+
 app.include_router(device_router)
 app.include_router(backup_router)
+app.include_router(firewall_router)
+
 
 
 # Маршруты для проверки здоровья приложения
@@ -77,12 +85,14 @@ async def api_status():
         "api_version": "1.0",
         "services": {
             "device_manager": "active",
+            "firewall_manager": "active",
             "mikrotik_connector": "active"
         },
         "endpoints": {
             "devices": "/devices/",
             "device_groups": "/devices/groups/",
-            "device_status": "/devices/{id}/status"
+            "device_status": "/devices/{id}/status",
+            "firewall_lists": "/firewall/lists/"
         }
     }
 
@@ -131,4 +141,6 @@ if __name__ == "__main__":
         port=8000,
         reload=True,
         log_level="info"
+
     )
+
