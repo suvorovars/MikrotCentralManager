@@ -1,14 +1,16 @@
+import asyncio
 from typing import List, Optional
 
 from mikrotik_connector import MikroTikConnector
 
-from device_manager.service import DeviceService
+from device_manager.service import DeviceGroupService, DeviceService
 from firewall_manager.firewall_utils import mikrotik_address_list
 from firewall_manager.schemas import (
     FirewallListEntry,
     FirewallListResponse,
     FirewallListType,
     FirewallListOperationResponse,
+    FirewallGroupListResponse,
 )
 
 
@@ -75,6 +77,36 @@ class FirewallListService:
             list_type=list_type,
             list_name=list_name,
             entries=entries,
+        )
+
+    async def get_group_list(
+        self,
+        group_id: int,
+        list_type: FirewallListType,
+    ) -> FirewallGroupListResponse:
+        group_service = DeviceGroupService(self.device_service.db)
+        group = group_service.get_group_with_devices(group_id)
+        if not group:
+            raise ValueError(f"Group {group_id} not found")
+
+        list_name = self._get_list_name(list_type)
+        tasks = [
+            self.get_list(device.id, list_type)
+            for device in group.devices
+        ]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        device_lists: List[FirewallListResponse] = []
+        for result in results:
+            if isinstance(result, Exception):
+                raise result
+            device_lists.append(result)
+
+        return FirewallGroupListResponse(
+            group_id=group_id,
+            group_name=group.name,
+            list_type=list_type,
+            list_name=list_name,
+            devices=device_lists,
         )
 
     async def add_address(

@@ -15,6 +15,7 @@ from firewall_manager.schemas import (
     FirewallListResponse,
     FirewallListOperationResponse,
     FirewallListType,
+    FirewallGroupListResponse,
 )
 from firewall_manager.service import FirewallListService
 
@@ -58,6 +59,21 @@ async def get_whitelist(
 
 
 @router.get(
+    "/whitelist/group/{group_id}",
+    response_model=FirewallGroupListResponse,
+)
+async def get_whitelist_by_group(
+    group_id: int,
+    db: Session = Depends(get_db),
+):
+    service = _get_service(db)
+    try:
+        return await service.get_group_list(group_id, FirewallListType.whitelist)
+    except Exception as exc:
+        _raise_http_error(exc)
+
+
+@router.get(
     "/blacklist/{device_id}",
     response_model=FirewallListResponse,
 )
@@ -68,6 +84,21 @@ async def get_blacklist(
     service = _get_service(db)
     try:
         return await service.get_list(device_id, FirewallListType.blacklist)
+    except Exception as exc:
+        _raise_http_error(exc)
+
+
+@router.get(
+    "/blacklist/group/{group_id}",
+    response_model=FirewallGroupListResponse,
+)
+async def get_blacklist_by_group(
+    group_id: int,
+    db: Session = Depends(get_db),
+):
+    service = _get_service(db)
+    try:
+        return await service.get_group_list(group_id, FirewallListType.blacklist)
     except Exception as exc:
         _raise_http_error(exc)
 
