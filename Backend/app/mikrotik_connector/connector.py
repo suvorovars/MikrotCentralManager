@@ -238,6 +238,12 @@ class MikroTikConnector:
         stdin, stdout, stderr = self.ssh_client.exec_command(command)
         return stdout.read().decode(), stderr.read().decode()
 
+    def run_ssh_command(self, command: str) -> str:
+        output, error = self._run_ssh(command)
+        if error:
+            raise RuntimeError(error)
+        return output
+
     # ------------------------------------------------------------------
     # PARSING (minimal, safe)
     # ------------------------------------------------------------------
