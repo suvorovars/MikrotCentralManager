@@ -109,6 +109,13 @@ class DeviceCRUD:
                 db_device.last_seen = func.now()
             self.db.commit()
 
+    def update_last_backup(self, device_id: int, backup_time) -> None:
+        """Обновление времени последнего бэкапа"""
+        db_device = self.get_device(device_id)
+        if db_device:
+            db_device.last_backup = backup_time
+            self.db.commit()
+
 
 class DeviceGroupCRUD:
     def __init__(self, db: Session):

@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from db import engine, Base
 from device_manager.api import router as device_router
+from backup_manager.api import router as backup_router
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
@@ -44,6 +45,7 @@ app.add_middleware(
 
 # Подключаем роутеры микросервисов
 app.include_router(device_router)
+app.include_router(backup_router)
 
 
 # Маршруты для проверки здоровья приложения
