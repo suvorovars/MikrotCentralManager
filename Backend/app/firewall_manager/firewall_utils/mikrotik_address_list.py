@@ -17,16 +17,28 @@ def _raise_connection_error(connector: MikroTikConnector, error: Exception) -> N
     ) from error
 
 
+async def _fetch_address_entries(
+    connector: MikroTikConnector,
+    *,
+    list_name: str,
+    address: Optional[str] = None,
+) -> List[Dict]:
+    where = {"list": list_name}
+    if address:
+        where["address"] = address
+    return await connector.ros_execute(
+        path="/ip/firewall/address-list",
+        action="print",
+        where=where,
+    )
+
+
 async def get_address_list(connector: MikroTikConnector, list_name: str) -> List[Dict]:
     """
     Получить все записи address-list для указанного списка
     """
     try:
-        return await connector.ros_execute(
-            path="/ip/firewall/address-list",
-            action="print",
-            where={"list": list_name},
-        )
+        return await _fetch_address_entries(connector, list_name=list_name)
 
     except Exception as e:
         if "No available API or SSH connection" in str(e):
@@ -41,10 +53,10 @@ async def address_exists(connector: MikroTikConnector, list_name: str, address: 
     Проверка существования адреса в списке
     """
     try:
-        result = await connector.ros_execute(
-            path="/ip/firewall/address-list",
-            action="print",
-            where={"list": list_name, "address": address},
+        result = await _fetch_address_entries(
+            connector,
+            list_name=list_name,
+            address=address,
         )
         return len(result) > 0
 
@@ -103,10 +115,10 @@ async def remove_address(
     Удалить адрес из address-list
     """
     try:
-        result = await connector.ros_execute(
-            path="/ip/firewall/address-list",
-            action="print",
-            where={"list": list_name, "address": address},
+        result = await _fetch_address_entries(
+            connector,
+            list_name=list_name,
+            address=address,
         )
         if not result:
             raise AddressNotFound(
