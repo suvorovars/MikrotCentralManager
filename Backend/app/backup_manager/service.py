@@ -140,3 +140,13 @@ class BackupService:
             return record
         finally:
             await connector.disconnect()
+
+    async def get_backup_file(self, backup_id: int):
+        record = self.backup_crud.get_backup_record(backup_id)
+        if not record:
+            raise ValueError("Backup record not found")
+
+        if not os.path.isfile(record.storage_path):
+            raise FileNotFoundError("Backup file not found in storage")
+
+        return record
