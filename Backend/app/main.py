@@ -7,6 +7,7 @@ from device_manager.api import router as device_router
 from backup_manager.api import router as backup_router
 from task_manager import models as task_models
 from firewall_manager.api import router as firewall_router
+from task_manager.scheduler import create_scheduler_from_env
 
 import uvicorn
 
@@ -22,10 +23,15 @@ async def lifespan(app: FastAPI):
     print("Creating database tables...")
     Base.metadata.create_all(bind=engine)
     print("Database tables created successfully!")
+    scheduler = create_scheduler_from_env()
+    if scheduler:
+        scheduler.start()
 
     yield  # Здесь приложение запущено и готово обрабатывать запросы
 
     # Код очистки при завершении
+    if scheduler:
+        await scheduler.stop()
     print("Shutting down application...")
 
 

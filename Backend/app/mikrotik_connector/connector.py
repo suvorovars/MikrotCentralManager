@@ -5,6 +5,7 @@ from typing import Optional, Dict, List
 from librouteros import connect
 from librouteros.exceptions import LibRouterosError
 import paramiko
+from mikrotik_connector.utils import acquire_connection_slot, release_connection_slot
 
 
 class MikroTikConnector:
@@ -30,6 +31,7 @@ class MikroTikConnector:
         self.api_connection = None
         self.ssh_client = None
         self.sftp_client = None
+        self._connection_slot_acquired = False
 
     # ------------------------------------------------------------------
     # CONNECTION MANAGEMENT
@@ -41,12 +43,23 @@ class MikroTikConnector:
         - пытаемся API
         - SSH подключаем независимо (fallback)
         """
+        if not self._connection_slot_acquired:
+            await acquire_connection_slot()
+            self._connection_slot_acquired = True
         await self._connect_api()
         self._connect_ssh()
+        if not self.api_connection and not self.ssh_client:
+            self._release_connection_slot()
 
     async def disconnect(self):
         await self._disconnect_api()
         self._disconnect_ssh()
+        self._release_connection_slot()
+
+    def _release_connection_slot(self) -> None:
+        if self._connection_slot_acquired:
+            release_connection_slot()
+            self._connection_slot_acquired = False
 
     # ---------------- API ---------------- #
 
