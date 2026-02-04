@@ -73,6 +73,20 @@
 
 Архитектура: Приложение должно быть спроектировано с учетом масштабирования. 60 устройств – не мало, все операции должны быть асинхронными.
 
+4.1. Развертывание и база данных:
+
+- DATABASE_URL обязателен для запуска приложения и миграций.
+- Значение по умолчанию — PostgreSQL (пример строки подключения):
+  - `postgresql+psycopg2://user:password@localhost:5432/mikrotik_manager`
+- В docker-compose переменная DATABASE_URL формируется из DB_USER/DB_PASSWORD/DB_PORT/DB_NAME.
+- Локальная разработка: для упрощенной работы можно переопределить DATABASE_URL на SQLite:
+  - `DATABASE_URL=sqlite:///./mikrotik_manager.db`
+  - это режим только для локальной разработки и тестов.
+- Миграции (Alembic):
+  - `cd Backend`
+  - `alembic revision --autogenerate -m "init"`
+  - `alembic upgrade head`
+
 5. Интерфейс пользователя (UI):
 
 Простой и интуитивно понятный веб-интерфейс.
