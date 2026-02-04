@@ -21,6 +21,8 @@ logger = get_task_logger(__name__)
 
 
 def _parse_cron_field(value: str, minimum: int, maximum: int) -> List[int]:
+    # Разбирает одно cron-поле в набор числовых значений, поддерживая "*",
+    # шаги (*/n), диапазоны (a-b) и списки, разделенные запятыми.
     if value == "*":
         return list(range(minimum, maximum + 1))
 
@@ -39,6 +41,8 @@ def _parse_cron_field(value: str, minimum: int, maximum: int) -> List[int]:
 
 
 def cron_matches(dt: datetime, expression: str) -> bool:
+    # Сопоставляет дату-время со всеми пятью cron-полями, раскрывая каждое поле
+    # в допустимый набор значений и проверяя вхождение.
     minute_s, hour_s, day_s, month_s, weekday_s = expression.split()
     minutes = _parse_cron_field(minute_s, 0, 59)
     hours = _parse_cron_field(hour_s, 0, 23)
@@ -56,6 +60,8 @@ def cron_matches(dt: datetime, expression: str) -> bool:
 
 
 def compute_next_run(now: datetime, expression: str, lookahead_minutes: int = 60 * 24) -> datetime:
+    # Ищет ближайшую минуту в окне просмотра, которая соответствует cron-выражению,
+    # начиная со следующей минуты после "now", чтобы не переисполнять текущую.
     check_time = now + timedelta(minutes=1)
     for _ in range(lookahead_minutes):
         if cron_matches(check_time, expression):
@@ -65,6 +71,8 @@ def compute_next_run(now: datetime, expression: str, lookahead_minutes: int = 60
 
 
 def _collect_target_device_ids(session: Session, task: Task) -> List[int]:
+    # Преобразует цели задачи в уникальный отсортированный список ID устройств,
+    # разворачивая группы в список входящих в них устройств.
     device_ids: List[int] = []
     for target in task.targets:
         if target.target_type == "device" and target.device_id:
@@ -260,6 +268,8 @@ def _execute_task_for_device(session: Session, task: Task, device_id: int) -> Di
 
 @celery_app.task(name="task_manager.worker.execute_task", bind=True)
 def execute_task(self, task_id: int, triggered_by: str = "schedule") -> None:
+    # Выполняет задачу по целевым устройствам, фиксирует результаты по каждому
+    # устройству и обновляет метаданные выполнения на основе успеха/ошибок.
     session = SessionLocal()
     try:
         task = session.query(Task).filter(Task.id == task_id).first()
@@ -316,6 +326,8 @@ def execute_task(self, task_id: int, triggered_by: str = "schedule") -> None:
 
 @celery_app.task(name="task_manager.worker.dispatch_scheduled_tasks")
 def dispatch_scheduled_tasks() -> None:
+    # Обходит включенные задачи, рассчитывает отсутствующие расписания и ставит
+    # в очередь те, чей next_run_at наступил и совпадает с cron-выражением.
     session = SessionLocal()
     now = datetime.now(timezone.utc)
     try:
