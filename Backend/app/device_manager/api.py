@@ -5,8 +5,13 @@ from typing import List, Optional
 from db import get_db
 from device_manager import schemas, service, crud, models
 from security import encrypt_password
+from security.auth import get_current_user, require_admin
 
-router = APIRouter(prefix="/devices", tags=["devices"])
+router = APIRouter(
+    prefix="/devices",
+    tags=["devices"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @router.post("/", response_model=schemas.DeviceResponse)
@@ -82,6 +87,7 @@ async def check_devices(
 @router.get("/{device_id}/credentials")
 def get_device_credentials(
         device_id: int,
+        _: None = Depends(require_admin),
         db: Session = Depends(get_db)
 ):
     """Получение учетных данных устройства (только для внутреннего использования)"""
