@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from db import get_db
 from device_manager.service import DeviceService
+from security.auth import get_current_user
 from firewall_manager.firewall_utils.exceptions import (
     FirewallConnectionError,
     FirewallOperationError,
@@ -20,7 +21,11 @@ from firewall_manager.schemas import (
 from firewall_manager.service import FirewallListService
 
 
-router = APIRouter(prefix="/firewall/lists", tags=["firewall"])
+router = APIRouter(
+    prefix="/firewall/lists",
+    tags=["firewall"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 def _get_service(db: Session) -> FirewallListService:

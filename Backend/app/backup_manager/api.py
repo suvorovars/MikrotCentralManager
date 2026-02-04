@@ -4,8 +4,13 @@ from sqlalchemy.orm import Session
 
 from db import get_db
 from backup_manager import schemas, service, models
+from security.auth import get_current_user
 
-router = APIRouter(prefix="/backups", tags=["backups"])
+router = APIRouter(
+    prefix="/backups",
+    tags=["backups"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @router.post("/devices/{device_id}/run", response_model=schemas.BackupRunResponse)
