@@ -78,6 +78,20 @@ def _decrypt_with_fernets(token: bytes) -> Tuple[str, int]:
 
 
 def encrypt_password(password: str) -> str:
+    """Шифрует пароль устройства для хранения.
+
+    Назначение:
+        Формирует значение `encrypted_password` в формате Fernet с префиксом версии.
+
+    Где вызывается в приложении:
+        * Создание/обновление устройств в device_manager CRUD (create_device/update_device).
+        * Полное обновление устройства через REST API (PUT /devices/{device_id}).
+
+    Риски/примечания:
+        * Требуются ключи шифрования; при их отсутствии выбрасывается RuntimeError и запись
+          не будет сохранена.
+        * При компрометации ключей злоумышленник сможет расшифровать сохранённые пароли.
+    """
     if not password:
         return ""
     primary = _require_fernets()[0]
@@ -102,5 +116,20 @@ def decrypt_password_with_migration(password: str) -> Tuple[str, Optional[str]]:
 
 
 def decrypt_password(password: str) -> str:
+    """Расшифровывает сохранённый пароль устройства.
+
+    Назначение:
+        Преобразует `encrypted_password` обратно в открытый текст для внутреннего использования.
+
+    Где вызывается в приложении:
+        Это обёртка над `decrypt_password_with_migration`. Сейчас в коде напрямую используется
+        `decrypt_password_with_migration` при выдаче учётных данных в
+        DeviceCRUD.get_device_with_password (эндпоинт /devices/{device_id}/credentials).
+
+    Риски/примечания:
+        * Возвращается открытый текст; важно не логировать и не отдавать его наружу.
+        * Legacy-режим может быть plaintext/reversed, что не является криптографически
+          безопасным и не подходит для продакшн-данных.
+    """
     plaintext, _ = decrypt_password_with_migration(password)
     return plaintext
