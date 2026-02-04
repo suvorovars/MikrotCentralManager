@@ -13,16 +13,6 @@ services:
     networks:
       - my-network
 
-  frontend:
-    build: ./Frontend
-    container_name: frontend
-    ports:
-      - "5173:5173"
-    depends_on:
-      - backend
-    networks:  # Подключение к сети
-      - my-network  # Имя сети
-
   db:
     image: postgres:15
     container_name: db
