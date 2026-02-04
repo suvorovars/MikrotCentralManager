@@ -11,6 +11,7 @@ class Task(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(150), nullable=False)
     task_type = Column(String(50), nullable=False)
+    payload = Column(Text, nullable=True)
 
     schedule_expression = Column(String(100), nullable=False)
     schedule_timezone = Column(String(50), default="UTC")
@@ -71,6 +72,7 @@ class TaskResult(Base):
 
     status = Column(String(20), default="pending")
     output = Column(Text, nullable=True)
+    result_payload = Column(Text, nullable=True)
     error_message = Column(Text, nullable=True)
 
     started_at = Column(DateTime(timezone=True), server_default=func.now())
