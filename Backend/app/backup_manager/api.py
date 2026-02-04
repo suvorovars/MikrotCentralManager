@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from db import get_db
@@ -43,3 +44,23 @@ async def restore_backup(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     return schemas.BackupRecordResponse.from_orm(record)
+
+
+@router.get("/{backup_id}/download")
+async def download_backup(
+    backup_id: int,
+    db: Session = Depends(get_db),
+):
+    backup_service = service.BackupService(db)
+    try:
+        record = await backup_service.get_backup_file(backup_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    return FileResponse(
+        path=record.storage_path,
+        filename=record.filename,
+        media_type="application/octet-stream",
+    )
