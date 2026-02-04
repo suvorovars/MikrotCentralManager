@@ -7,6 +7,7 @@ from device_manager import schemas, service, crud, models
 from security import encrypt_password
 from security.auth import get_current_user, require_admin
 
+# Роутер подсистемы устройств: prefix задает базовый путь, tags группирует эндпоинты в документации.
 router = APIRouter(
     prefix="/devices",
     tags=["devices"],
@@ -14,6 +15,7 @@ router = APIRouter(
 )
 
 
+# Создание устройства (POST /devices).
 @router.post("/", response_model=schemas.DeviceResponse)
 def create_device(
         device: schemas.DeviceCreate,
@@ -32,6 +34,7 @@ def create_device(
     return device_crud.create_device(device)
 
 
+# Получение списка устройств (GET /devices) с необязательной фильтрацией по группе.
 @router.get("/", response_model=List[schemas.DeviceResponse])
 def get_devices(
         skip: int = 0,
@@ -47,6 +50,7 @@ def get_devices(
     return device_crud.get_all_devices(skip, limit)
 
 
+# Получение устройства по ID (GET /devices/{device_id}).
 @router.get("/{device_id}", response_model=schemas.DeviceResponse)
 def get_device(
         device_id: int,
@@ -60,6 +64,7 @@ def get_device(
     return device
 
 
+# Проверка статуса устройства (GET /devices/{device_id}/status).
 @router.get("/{device_id}/status", response_model=schemas.DeviceStatusResponse)
 async def get_device_status(
         device_id: int,
@@ -73,6 +78,7 @@ async def get_device_status(
     return status
 
 
+# Проверка доступности нескольких устройств (POST /devices/check).
 @router.post("/check", response_model=List[schemas.DeviceStatusResponse])
 async def check_devices(
         device_ids: List[int],
@@ -84,6 +90,8 @@ async def check_devices(
     return results
 
 
+# Внутренний эндпоинт: возвращает учетные данные устройства (GET /devices/{device_id}/credentials).
+# Используется сервисами/воркерами и ограничен ролью администратора.
 @router.get("/{device_id}/credentials")
 def get_device_credentials(
         device_id: int,
@@ -98,6 +106,7 @@ def get_device_credentials(
     return credentials
 
 
+# Полное обновление устройства (PUT /devices/{device_id}): требует все поля модели.
 @router.put("/{device_id}", response_model=schemas.DeviceResponse)
 def update_device_full(
         device_id: int,
@@ -125,6 +134,7 @@ def update_device_full(
     return db_device
 
 
+# Частичное обновление устройства (PATCH /devices/{device_id}): меняет только указанные поля.
 @router.patch("/{device_id}", response_model=schemas.DeviceResponse)
 def update_device_partial(
         device_id: int,
@@ -139,6 +149,7 @@ def update_device_partial(
     return updated
 
 
+# Удаление устройства (DELETE /devices/{device_id}).
 @router.delete("/{device_id}")
 def delete_device(
         device_id: int,
@@ -152,7 +163,8 @@ def delete_device(
     return {"message": "Device deleted successfully"}
 
 
-# Группы устройств
+# Группы устройств.
+# Создание группы устройств (POST /devices/groups/).
 @router.post("/groups/", response_model=schemas.DeviceGroupResponse)
 def create_group(
         group: schemas.DeviceGroupCreate,
@@ -171,6 +183,7 @@ def create_group(
     return group_crud.create_group(group)
 
 
+# Получение всех групп (GET /devices/groups/).
 @router.get("/groups/", response_model=List[schemas.DeviceGroupDetail])
 def get_groups(db: Session = Depends(get_db)):
     """Получение всех групп с количеством устройств"""
@@ -196,6 +209,7 @@ def get_groups(db: Session = Depends(get_db)):
     return result
 
 
+# Получение группы с устройствами (GET /devices/groups/{group_id}).
 @router.get("/groups/{group_id}", response_model=schemas.DeviceGroupWithDevices)
 def get_group(
         group_id: int,
@@ -222,6 +236,7 @@ def get_group(
     )
 
 
+# Проверка устройств в группе (GET /devices/groups/{group_id}/check).
 @router.get("/groups/{group_id}/check", response_model=List[schemas.DeviceStatusResponse])
 async def check_group_devices(
         group_id: int,
@@ -249,6 +264,7 @@ async def check_group_devices(
     return results
 
 
+# Полное обновление группы (PUT /devices/groups/{group_id}): требует все поля модели.
 @router.put("/groups/{group_id}", response_model=schemas.DeviceGroupResponse)
 def update_group_full(
         group_id: int,
@@ -272,6 +288,7 @@ def update_group_full(
     return db_group
 
 
+# Частичное обновление группы (PATCH /devices/groups/{group_id}): меняет только указанные поля.
 @router.patch("/groups/{group_id}", response_model=schemas.DeviceGroupResponse)
 def update_group_partial(
         group_id: int,
@@ -286,6 +303,7 @@ def update_group_partial(
     return updated
 
 
+# Удаление группы (DELETE /devices/groups/{group_id}).
 @router.delete("/groups/{group_id}")
 def delete_group(
         group_id: int,
