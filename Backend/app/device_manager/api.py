@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from db import get_db
 from device_manager import schemas, service, crud, models
-from security import encrypt_password, decrypt_password
+from security import encrypt_password
 
 router = APIRouter(prefix="/devices", tags=["devices"])
 

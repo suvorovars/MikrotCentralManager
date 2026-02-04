@@ -2,7 +2,7 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
 from device_manager import models, schemas
-from security import encrypt_password, decrypt_password
+from security import encrypt_password, decrypt_password_with_migration
 from sqlalchemy import func  # Добавьте этот импорт
 
 
@@ -40,6 +40,11 @@ class DeviceCRUD:
         """Получение устройства с расшифрованным паролем"""
         device = self.get_device(device_id)
         if device:
+            password, migrated = decrypt_password_with_migration(device.encrypted_password)
+            if migrated and migrated != device.encrypted_password:
+                device.encrypted_password = migrated
+                self.db.commit()
+                self.db.refresh(device)
             return {
                 'id': device.id,
                 'name': device.name,
@@ -48,7 +53,7 @@ class DeviceCRUD:
                 'api_port': device.api_port,
                 'ssh_port': device.ssh_port,
                 'username': device.username,
-                'password': decrypt_password(device.encrypted_password),
+                'password': password,
                 'group_id': device.group_id,
                 'use_ssl': device.use_ssl,
                 'check_interval': device.check_interval,
