@@ -19,6 +19,7 @@ from fastapi.openapi.utils import get_openapi
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Управление жизненным циклом приложения"""
+    # На старте сервиса поднимаем инфраструктуру: создаем таблицы и запускаем scheduler.
     # Создаем таблицы в БД при старте
     print("Creating database tables...")
     Base.metadata.create_all(bind=engine)
@@ -29,13 +30,13 @@ async def lifespan(app: FastAPI):
 
     yield  # Здесь приложение запущено и готово обрабатывать запросы
 
-    # Код очистки при завершении
+    # При завершении работы корректно останавливаем scheduler и освобождаем ресурсы.
     if scheduler:
         await scheduler.stop()
     print("Shutting down application...")
 
 
-# Создаем FastAPI приложение
+# Создаем FastAPI приложение: задаем метаданные (title/description/docs) и lifecycle (lifespan).
 app = FastAPI(
     title="MikroTik ITT Central Manager",
     description="Веб-приложение для централизованного управления устройствами MikroTik",
@@ -45,7 +46,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Настройка CORS
+# Настройка CORS: разрешаем кросс-доменные запросы для фронтенда/клиентов API.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # В продакшене заменить на конкретные домены
@@ -54,7 +55,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Подключаем роутеры микросервисов
+# Подключаем роутеры микросервисов: регистрируем endpoints подсистем.
 
 app.include_router(device_router)
 app.include_router(backup_router)
@@ -62,7 +63,7 @@ app.include_router(firewall_router)
 
 
 
-# Маршруты для проверки здоровья приложения
+# Маршруты для проверки здоровья приложения и базового статуса API.
 @app.get("/")
 async def root():
     """Корневой маршрут - информация о приложении"""
@@ -103,7 +104,7 @@ async def api_status():
     }
 
 
-# Кастомная документация Swagger
+# Кастомная документация Swagger: переопределяем UI и favicon.
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
     return get_swagger_ui_html(
@@ -113,7 +114,7 @@ async def custom_swagger_ui_html():
     )
 
 
-# Кастомная OpenAPI схема
+# Кастомная OpenAPI схема: настраиваем метаданные и security-схему.
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
